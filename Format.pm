@@ -1,7 +1,7 @@
 package String::Format;
 
 # ----------------------------------------------------------------------
-# $Id: Format.pm,v 1.9 2002/02/06 19:25:18 dlc Exp $
+# $Id: Format.pm,v 1.10 2002/02/06 21:01:41 dlc Exp $
 # ----------------------------------------------------------------------
 #  Copyright (C) 2002 darren chamberlain <darren@cpan.org>
 #
@@ -25,7 +25,7 @@ use vars qw($VERSION @EXPORT);
 use Exporter;
 use base qw(Exporter);
 
-$VERSION = sprintf "%d.%02d", q$Revision: 1.9 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
 @EXPORT = qw(stringf);
 
 sub _replace {
@@ -63,11 +63,11 @@ sub stringf {
        $args->{'%'} = "%"  unless defined $args->{'%'};
     my $chars = join '', keys %{$args};
     my $regex = qr!
-                  (%
-                   ([+-])?
-                   (\d*)?
-                   ({.*?})?
-                   ([$chars])
+                   (%             # leading '%'
+                    ([+-])?       # optional alignment specifier
+                    (\d*)?        # optional field width
+                    ({.*?})?      # optional stuff inside
+                    ([$chars])    # actual format character
                  )!x;
 
     $format =~ s/$regex/_replace($args, $1, $2, $3, $4, $5)/ge;

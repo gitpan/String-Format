@@ -1,7 +1,7 @@
 package String::Format;
 
 # ----------------------------------------------------------------------
-# $Id: Format.pm,v 1.10 2002/02/06 21:01:41 dlc Exp $
+# $Id: Format.pm,v 1.13 2002/02/11 13:46:48 dlc Exp $
 # ----------------------------------------------------------------------
 #  Copyright (C) 2002 darren chamberlain <darren@cpan.org>
 #
@@ -25,54 +25,74 @@ use vars qw($VERSION @EXPORT);
 use Exporter;
 use base qw(Exporter);
 
-$VERSION = sprintf "%d.%02d", q$Revision: 1.10 $ =~ /(\d+)\.(\d+)/;
+$VERSION = sprintf "%d.%02d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
 @EXPORT = qw(stringf);
 
 sub _replace {
-    my ($args, $orig, $alignment, $width, $passme, $formchar) = @_;
+    my ($args, $orig, $alignment, $min_width,
+        $max_width, $passme, $formchar) = @_;
 
     # For unknown escapes, return the orignial
     return $orig unless defined $args->{$formchar};
 
     $alignment = '+' unless defined $alignment;
 
-    my $replacment = $args->{$formchar};
-    if (ref $replacment eq 'CODE') {
+    my $replacement = $args->{$formchar};
+    if (ref $replacement eq 'CODE') {
         # $passme gets passed to subrefs.
         $passme ||= "";
         $passme =~ tr/{}//d;
-        $replacment = $replacment->($passme);
+        $replacement = $replacement->($passme);
     }
 
-    $width ||= length $replacment;
+    my $replength = length $replacement;
+    $min_width  ||= $replength;
+    $max_width  ||= $replength;
 
-    return substr($replacment, 0, $width) unless $width > length $replacment;
+    # length of replacement is between min and max
+    if (($replength > $min_width) && ($replength < $max_width)) {
+        return $replacement;
+    }
 
+    # length of replacement is longer than max; truncate
+    if ($replength > $max_width) {
+        return substr($replacement, 0, $max_width);
+    }
+    
+    # length of replacement is less than min: pad
     if ($alignment eq '-') {
-        return " " x ($width - length $replacment) . $replacment;
+        # left align; pad in front
+        return $replacement . " " x ($min_width - $replength);
     }
 
-    return $replacment . " " x ($width - length $replacment);
+    # right align, pad at end
+    return " " x ($min_width - $replength) . $replacement;
 }
 
+my $regex = qr/
+               (%             # leading '%'
+                (-)?          # left-align, rather than right
+                (\d*)?        # (optional) minimum field width
+                (?:\.(\d*))?  # (optional) maximum field width
+                ({.*?})?      # (optional) stuff inside
+                (\S)          # actual format character
+             )/x;
 sub stringf {
     my $format = shift || return;
     my $args = UNIVERSAL::isa($_[0], 'HASH') ? shift : { @_ };
        $args->{'n'} = "\n" unless defined $args->{'n'};
        $args->{'t'} = "\t" unless defined $args->{'t'};
        $args->{'%'} = "%"  unless defined $args->{'%'};
-    my $chars = join '', keys %{$args};
-    my $regex = qr!
-                   (%             # leading '%'
-                    ([+-])?       # optional alignment specifier
-                    (\d*)?        # optional field width
-                    ({.*?})?      # optional stuff inside
-                    ([$chars])    # actual format character
-                 )!x;
 
-    $format =~ s/$regex/_replace($args, $1, $2, $3, $4, $5)/ge;
+    $format =~ s/$regex/_replace($args, $1, $2, $3, $4, $5, $6)/ge;
 
     return $format;
+}
+
+sub stringfactory {
+    shift;  # It's a class method, but we don't actually want the class
+    my $args = UNIVERSAL::isa($_[0], "HASH") ? shift : { @_ };
+    return sub { stringf($_[0], $args) };
 }
 
 1;
@@ -80,12 +100,12 @@ __END__
 
 =head1 NAME
 
-String::Format - printf-like string formatting capabilities with
+String::Format - sprintf-like string formatting capabilities with
 arbitrary format definitions
 
 =head1 ABSTRACT
 
-String::Format allows for printf-style formatting capabilities with
+String::Format allows for sprintf-style formatting capabilities with
 arbitrary format definitions
 
 =head1 SYNOPSIS
@@ -118,7 +138,7 @@ String::Format lets you define arbitrary printf-like format sequences
 to be expanded.  This module would be most useful in configuration
 files and reporting tools, where the results of a query need to be
 formatted in a particular way.  It was inspired by mutt's index_format
-and related directives (see http://www.mutt.org/doc/manual/manual-6.html#index_format).
+and related directives (see <URL:http://www.mutt.org/doc/manual/manual-6.html#index_format>).
 
 =head1 FUNCTIONS
 
@@ -126,33 +146,35 @@ and related directives (see http://www.mutt.org/doc/manual/manual-6.html#index_f
 
 String::Format exports a single function called stringf.  stringf
 takes two arguments:  a format string (see FORMAT STRINGS, below) and
-a hash (or reference to a hash) of name => value pairs.  These name =>
-value pairs are what will be expanded in the format string.
+a reference to a hash of name => value pairs.  These name => value
+pairs are what will be expanded in the format string.
 
 =head1 FORMAT STRINGS
 
 Format strings must match the following regular expression:
 
-    /(%              # leading '%'
-       ([+-])?       # optional alignment specifier
-       (\d*)?        # optional field width
-       ({.*?})?      # optional stuff inside
-       ([$chars])    # actual format character
-     )/
+  qr/
+     (%             # leading '%'
+      (-)?          # left-align, rather than right
+      (\d*)?        # (optional) minimum field width
+      (?:\.(\d*))?  # (optional) maximum field width
+      ({.*?})?      # (optional) stuff inside
+      (\S)          # actual format character
+     )/x;
 
-where $chars is:
+If the escape character specified does not exist in %args, then the
+original string is used.  The alignment, minimum width, and maximum
+width options function identically to how they are defined in
+sprintf(3) (any variation is a bug, and should be reported).
 
-    join '', keys %args;
-
-where %args is the hash passed as the second parameter to B<stringf>.  If
-the escape character specified does not exist in %args, then the
-original string is used.  The alignment and field width options
-function identically to how they are defined in sprintf(3) (any
-variation is a bug, and should be reported).
+Note that Perl's sprintf definition is a little more liberal than the
+above regex; the deviations were intentional, and all deal with
+numeric formatting (the #, 0, and + leaders were specifically left
+out).
 
 The value attached to the key can be a scalar value or a subroutine
 reference; if it is a subroutine reference, then anything between the
-'{' and '}' ($4 in the above regex) will be passed as $_[0] to the
+'{' and '}' ($5 in the above regex) will be passed as $_[0] to the
 subroutine reference.  This allows for entries such as this:
 
   %args = (
@@ -173,9 +195,10 @@ above format string could be written as:
 
   "It is %{%M:%S right now, on %A, %B %e}d."
 
-By default, the formats 'n' and 't' are defined to be a newline and
-tab, respectively, if they are not already defined in the hash of
-arguments that gets passed it.  So we can add carriage returns simply:
+By default, the formats 'n', 't', and '%' are defined to be a newline,
+tab, and '%', respectively, if they are not already defined in the
+hashref of arguments that gets passed it.  So we can add carriage
+returns simply:
 
   "It is %{%M:%S right now, on %A, %B %e}d.%n"
 
@@ -183,22 +206,32 @@ Because of how the string is parsed, the normal "\n" and "\t" are
 turned into two characters each, and are not treated as a newline and
 tab.  This is a bug.
 
-=head1 TODO
+=head1 FACTORY METHOD
 
-=over 4
+String::Format also supports a class method, named B<stringfactory>,
+which will return reference to a "primed" subroutine.  stringfatory
+should be passed a reference to a hash of value; the returned
+subroutine will use these values as the %args hash.
 
-=item *
+  my $self = Some::Groovy::Package->new($$, $<, $^T);
+  my %formats = (
+        'i' => sub { $self->id      },
+        'd' => sub { $self->date    },
+        's' => sub { $self->subject },
+        'b' => sub { $self->body    },
+  );
+  my $index_format = String::Format->stringfactory(\%formats);
 
-Make sure that the handling of formatting, such as the alignment and
-field width pieces, are consistent with sprintf.
+  print $index_format->($format1);
+  print $index_format->($format2);
 
-=back
+This subroutine reference can be assigned to a local symbol table
+entry, and called normally, of course:
+
+  *reformat = String::Format->stringfactory(\%formats);
+
+  my $reformed = reformat($format_string);
 
 =head1 AUTHOR
 
 darren chamberlain <darren@cpan.org>
-
-
-
-
-

@@ -9,14 +9,40 @@
 # as they were passed in.
 # ======================================================================
 
+use strict;
 use String::Format;
 
-BEGIN { print "1..1\n" };
+my ($orig, $target, $result);
+BEGIN { print "1..3\n" };
 
-my $fmt = "My %foot hurts.";
-my $str = "My pretzel hurts.";
-
-if (stringf($fmt, { 'foot' => 'pretzel' }) ne $fmt) {
+# ======================================================================
+# Test 1
+# ======================================================================
+$orig   = q(My %foot hurts.);
+$target = q(My %foot hurts.);
+$result = stringf $orig, { 'foot' => 'pretzel' };
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 1\n";
+
+# ======================================================================
+# Test 2, same as Test 1, but with a one-char format string.
+# ======================================================================
+$target = "My pretzeloot hurts.";
+$result = stringf $orig, { 'f' => 'pretzel' };
+unless ($result eq $target) {
+    print "not ";
+}
+print "ok 2\n";
+
+# ======================================================================
+# Test 3
+# ======================================================================
+$orig   = 'I am %undefined';
+$target = 'I am not ndefined';
+$result = stringf $orig, { u => "not " };
+unless ($result eq $target) {
+    print "not ";
+}
+print "ok 3\n";

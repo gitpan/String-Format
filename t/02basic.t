@@ -8,7 +8,7 @@
 # There are many variations on this theme; a few are covered here.
 # ======================================================================
 
-BEGIN { print "1..7\n" }
+BEGIN { print "1..8\n" }
 
 use strict;
 use String::Format;
@@ -16,9 +16,7 @@ use String::Format;
 # ======================================================================
 # Lexicals.  $orig is the original format string.
 # ======================================================================
-my $orig = qq(I like %a, %b, and %g, but not %m or %w.);
-my $target = "I like apples, bannanas, and grapefruits, ".
-             "but not melons or watermelons.";
+my ($orig, $target, $result);
 my %fruit = (
     'a' => "apples",
     'b' => "bannanas",
@@ -29,85 +27,103 @@ my %fruit = (
 
 # ======================================================================
 # Test 1
-#
 # Standard test, with all elements in place.
 # ======================================================================
-unless (stringf($orig, \%fruit) eq $target) {
+$orig   = qq(I like %a, %b, and %g, but not %m or %w.);
+$target = "I like apples, bannanas, and grapefruits, ".
+          "but not melons or watermelons.";
+$result = stringf $orig, \%fruit;
+unless ($target eq $target) {
     print "not ";
 }
 print "ok 1\n";
 
 # ======================================================================
 # Test 2
-#
 # Test where some of the elements are missing.
 # ======================================================================
 delete $fruit{'b'};
 $target = "I like apples, %b, and grapefruits, ".
           "but not melons or watermelons.";
-unless (stringf($orig, \%fruit) eq $target) {
+$result = stringf $orig, \%fruit;
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 2\n";
 
 # ======================================================================
 # Test 3
-#
-# Field width
+# Upper and lower case of same char
 # ======================================================================
-$orig = "I am being %5r.";
-$target = "I am being trunc.";
-unless (stringf($orig, { "r" => "truncated" }) eq $target) {
+$orig   = '%A is not %a';
+$target = 'two is not one';
+$result = stringf $orig, { "a" => "one", "A" => "two" };
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 3\n";
 
 # ======================================================================
 # Test 4
-#
-# Alignment
+# Field width
 # ======================================================================
-$orig = "I am being %-30e.";
-$target = "I am being                      elongated.";
-unless (stringf($orig, { "e" => "elongated" }) eq $target) {
+$orig   = "I am being %.5r.";
+$target = "I am being trunc.";
+$result = stringf $orig, { "r" => "truncated" };
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 4\n";
 
 # ======================================================================
 # Test 5
-#
-# Testing of non-alphabet characters
+# Alignment
 # ======================================================================
-# Test 5.1 => '/'
-# ======================================================================
-$orig = "holy shit %/.";
-$target = "holy shit w00t.";
-unless (stringf($orig, { '/' => "w00t" }) eq $target) {
+$orig   = "I am being %30e.";
+$target = "I am being                      elongated.";
+$result = stringf $orig, { "e" => "elongated" };
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 5\n";
 
 # ======================================================================
-# Test 5.2 => numbers
+# Test 6 - 8
+# Testing of non-alphabet characters
 # ======================================================================
-$orig = "%1 %2 %3";
-$target = "1 2 3";
-unless (stringf($orig, { '1' => 1, '2' => 2, '3' => 3 }) eq $target) {
+# Test 6 => '/'
+# ======================================================================
+$orig   = "holy shit %/.";
+$target = "holy shit w00t.";
+$result = stringf $orig, { '/' => "w00t" };
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 6\n";
 
 # ======================================================================
-# Test 5.3 => perl sigils ($@&)
+# Test 7 => numbers
 # ======================================================================
-# Note: The %$ must be single quoted so it does not interpolate!  This
-# was causing this test to fail for no reason.
-# ======================================================================
-$orig = '%$ %@ %&';
+$orig   = '%1 %2 %3';
 $target = "1 2 3";
-my $out = stringf($orig, { '$' => 1, '@' => 2, '&' => 3 });
-unless ($out eq $target) {
+$result = stringf $orig, { '1' => 1, '2' => 2, '3' => 3 };
+unless ($result eq $target) {
     print "not ";
 }
 print "ok 7\n";
+
+# ======================================================================
+# Test 8 => perl sigils ($@&)
+# ======================================================================
+# Note: The %$ must be single quoted so it does not interpolate!
+# This was causing this test to unexpenctedly fail.
+# ======================================================================
+$orig   = '%$ %@ %&';
+$target = "1 2 3";
+$result = stringf $orig, { '$' => 1, '@' => 2, '&' => 3 };
+unless ($result eq $target) {
+    print "not ";
+}
+print "ok 8\n";
+
+

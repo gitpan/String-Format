@@ -1,3 +1,14 @@
+2002-02-08 16:51  dlc
+
+	* Changes, Format.pm, README, t/02basic.t: Modified regex to use
+	\S, rather than a regenerated one based on stuff passed in. This is
+	feasible because _replace now passes through everything it does not
+	recognize.  Updated t/02basic.t to refect this change.
+
+2002-02-06 16:01  dlc
+
+	* Format.pm: Commented regex.
+
 2002-02-06 14:25  dlc
 
 	* Format.pm: Added quotemeta and some other random things.

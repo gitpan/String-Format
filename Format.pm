@@ -1,7 +1,7 @@
 package String::Format;
 
 # ----------------------------------------------------------------------
-# $Id: Format.pm,v 1.13 2002/02/11 13:46:48 dlc Exp $
+# $Id: Format.pm,v 1.4 2005/12/22 17:18:12 dlc Exp $
 # ----------------------------------------------------------------------
 #  Copyright (C) 2002 darren chamberlain <darren@cpan.org>
 #
@@ -21,11 +21,12 @@ package String::Format;
 # -------------------------------------------------------------------
 
 use strict;
-use vars qw($VERSION @EXPORT);
+use vars qw($VERSION $REVSION @EXPORT);
 use Exporter;
 use base qw(Exporter);
 
-$VERSION = sprintf "%d.%02d", q$Revision: 1.13 $ =~ /(\d+)\.(\d+)/;
+$VERSION = '1.14';
+$REVSION = sprintf "%d.%02d", q$Revision: 1.4 $ =~ /(\d+)\.(\d+)/;
 @EXPORT = qw(stringf);
 
 sub _replace {

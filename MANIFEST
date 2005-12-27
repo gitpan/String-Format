@@ -1,6 +1,7 @@
 Changes
 Format.pm
 MANIFEST
+MANIFEST.SKIP
 Makefile.PL
 README
 t/01load.t
@@ -8,3 +9,4 @@ t/02basic.t
 t/03multiple.t
 t/04subrefs.t
 t/05stringfactory.t
+META.yml                                 Module meta-data (added by MakeMaker)

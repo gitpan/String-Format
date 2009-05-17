@@ -23,7 +23,7 @@ use vars qw($VERSION @EXPORT);
 use Exporter;
 use base qw(Exporter);
 
-$VERSION = '1.15';
+$VERSION = '1.16';
 @EXPORT = qw(stringf);
 
 sub _replace {
@@ -78,9 +78,9 @@ my $regex = qr/
 sub stringf {
     my $format = shift || return;
     my $args = UNIVERSAL::isa($_[0], 'HASH') ? shift : { @_ };
-       $args->{'n'} = "\n" unless defined $args->{'n'};
-       $args->{'t'} = "\t" unless defined $args->{'t'};
-       $args->{'%'} = "%"  unless defined $args->{'%'};
+       $args->{'n'} = "\n" unless exists $args->{'n'};
+       $args->{'t'} = "\t" unless exists $args->{'t'};
+       $args->{'%'} = "%"  unless exists $args->{'%'};
 
     $format =~ s/$regex/_replace($args, $1, $2, $3, $4, $5, $6)/ge;
 
@@ -108,11 +108,7 @@ arbitrary format definitions
 
 =head1 SYNOPSIS
 
-  # In a script invoked as:
-  # script.pl -f "I like %a, %b, and %g, but not %m or %w."
-
   use String::Format;
-  use Getopt::Std;
 
   my %fruit = (
         'a' => "apples",
@@ -122,10 +118,9 @@ arbitrary format definitions
         'w' => "watermelons",
   );
 
-  use vars qw($opt_f);
-  getopt("f");
+  my $format = "I like %a, %b, and %g, but not %m or %w.";
 
-  print stringf($opt_f, %fruit);
+  print stringf($format, %fruit);
   
   # prints:
   # I like apples, bannanas, and grapefruits, but not melons or watermelons.
@@ -229,6 +224,13 @@ entry, and called normally, of course:
   *reformat = String::Format->stringfactory(\%formats);
 
   my $reformed = reformat($format_string);
+
+=head1 LICENSE
+
+C<String::Format> is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License as
+published by the Free Software Foundation; version 2.
+
 
 =head1 AUTHOR
 
